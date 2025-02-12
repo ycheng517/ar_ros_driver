@@ -93,6 +93,9 @@
         "/opt/ros/jazzy/include/**"
     ],
     "C_Cpp.default.cppStandard": "c++17",
+    "[python]": {
+      "editor.defaultFormatter": "eeyore.yapf",
+    },
     "python.autoComplete.extraPaths": [
         "/opt/ros/jazzy/lib/python3.10/site-packages"
     ],

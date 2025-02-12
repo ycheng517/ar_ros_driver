@@ -30,12 +30,14 @@
 # Author: Denis Stogl
 
 import os
+import tempfile
 import yaml
 
 from ament_index_python.packages import get_package_share_directory
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 
+from launch.substitution import Substitution
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.substitutions import (
@@ -53,11 +55,41 @@ def load_yaml(package_name, file_name):
         return yaml.safe_load(file)
 
 
+class RvizConfigSubstitution(Substitution):
+    """Substitution to modify the RViz config file to include the namespace."""
+
+    def __init__(self, file_path: Substitution, namespace: Substitution):
+        super().__init__()
+        self._file_path = file_path
+        self._namespace = namespace
+
+    def perform(self, context):
+        # Evaluate the file path and namespace substitutions
+        file_path_val = self._file_path.perform(context)
+        namespace_val = self._namespace.perform(context)
+
+        # If the namespace is "/" or empty, no substitution is necessary.
+        if namespace_val in ["/", ""]:
+            return file_path_val
+
+        with open(file_path_val, "r") as f:
+            content = f.read()
+
+        content = content.replace('Move Group Namespace: ""',
+                                  f'Move Group Namespace: {namespace_val}')
+
+        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".rviz")
+        temp_file.write(content.encode("utf-8"))
+        temp_file.close()
+        return temp_file.name
+
+
 def generate_launch_description():
     use_sim_time = LaunchConfiguration("use_sim_time")
     include_gripper = LaunchConfiguration("include_gripper")
-    rviz_config_file = LaunchConfiguration("rviz_config_file")
     ar_model_config = LaunchConfiguration("ar_model")
+    rviz_config_file = LaunchConfiguration("rviz_config_file")
+    namespace_config = LaunchConfiguration("namespace")
 
     declared_arguments = []
     declared_arguments.append(
@@ -87,12 +119,17 @@ def generate_launch_description():
                               default_value="mk3",
                               choices=["mk1", "mk2", "mk3"],
                               description="Model of AR4"))
+    declared_arguments.append(
+        DeclareLaunchArgument("namespace",
+                              default_value="/",
+                              description="Namespace of AR4"))
 
     robot_description_content = Command([
         PathJoinSubstitution([FindExecutable(name="xacro")]),
         " ",
-        PathJoinSubstitution(
-            [FindPackageShare("annin_ar4_description"), "urdf", "ar.urdf.xacro"]),
+        PathJoinSubstitution([
+            FindPackageShare("annin_ar4_description"), "urdf", "ar.urdf.xacro"
+        ]),
         " ",
         "ar_model:=",
         ar_model_config,
@@ -106,8 +143,10 @@ def generate_launch_description():
     robot_description_semantic_content = Command([
         PathJoinSubstitution([FindExecutable(name="xacro")]),
         " ",
-        PathJoinSubstitution(
-            [FindPackageShare("annin_ar4_moveit_config"), "srdf", "ar.srdf.xacro"]),
+        PathJoinSubstitution([
+            FindPackageShare("annin_ar4_moveit_config"), "srdf",
+            "ar.srdf.xacro"
+        ]),
         " ",
         "name:=",
         ar_model_config,
@@ -119,12 +158,12 @@ def generate_launch_description():
         "robot_description_semantic": robot_description_semantic_content
     }
 
+    robot_description_kinematics_content = load_yaml(
+        "annin_ar4_moveit_config",
+        os.path.join("config", "kinematics.yaml"),
+    )
     robot_description_kinematics = {
-        "robot_description_kinematics":
-        load_yaml(
-            "annin_ar4_moveit_config",
-            os.path.join("config", "kinematics.yaml"),
-        )
+        "robot_description_kinematics": robot_description_kinematics_content
     }
 
     robot_description_planning = {
@@ -148,7 +187,8 @@ def generate_launch_description():
     }
 
     # Trajectory Execution Configuration
-    controllers_yaml = load_yaml("annin_ar4_moveit_config", "config/controllers.yaml")
+    controllers_yaml = load_yaml("annin_ar4_moveit_config",
+                                 "config/controllers.yaml")
 
     moveit_controllers = {
         "moveit_simple_controller_manager":
@@ -175,7 +215,8 @@ def generate_launch_description():
 
     # Starts Pilz Industrial Motion Planner MoveGroupSequenceAction and MoveGroupSequenceService servers
     move_group_capabilities = {
-        "capabilities": "pilz_industrial_motion_planner/MoveGroupSequenceAction pilz_industrial_motion_planner/MoveGroupSequenceService"
+        "capabilities":
+        "pilz_industrial_motion_planner/MoveGroupSequenceAction pilz_industrial_motion_planner/MoveGroupSequenceService"
     }
 
     # Start the actual move_group node/action server
@@ -193,26 +234,31 @@ def generate_launch_description():
             moveit_controllers,
             planning_scene_monitor_parameters,
             move_group_capabilities,
-            {"use_sim_time": use_sim_time},
+            {
+                "use_sim_time": use_sim_time
+            },
         ],
+        namespace=namespace_config,
     )
 
     # rviz with moveit configuration
+    rviz_config_with_namespace = RvizConfigSubstitution(
+        rviz_config_file, namespace_config)
     rviz_node = Node(
         package="rviz2",
         executable="rviz2",
-        name="rviz2_moveit",
         output="log",
-        arguments=["-d", rviz_config_file],
+        arguments=["-d", rviz_config_with_namespace],
         parameters=[
             robot_description,
             robot_description_semantic,
             planning_pipeline_config,
             robot_description_kinematics,
-            robot_description_planning,
-            {"use_sim_time": use_sim_time},
+            {
+                "use_sim_time": use_sim_time
+            },
         ],
+        namespace=namespace_config,
     )
-
     nodes_to_start = [move_group_node, rviz_node]
     return LaunchDescription(declared_arguments + nodes_to_start)

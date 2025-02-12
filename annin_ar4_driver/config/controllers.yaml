@@ -1,4 +1,4 @@
-controller_manager:
+/**/controller_manager:
   ros__parameters:
     update_rate: 100 # Hz
 
@@ -11,7 +11,7 @@ controller_manager:
     joint_state_broadcaster:
       type: joint_state_broadcaster/JointStateBroadcaster
 
-joint_trajectory_controller:
+/**/joint_trajectory_controller:
   ros__parameters:
     joints:
       - joint_1
@@ -56,6 +56,6 @@ joint_trajectory_controller:
       joint_5: 1.0
       joint_6: 1.0
 
-gripper_controller:
+/**/gripper_controller:
   ros__parameters:
     joint: gripper_jaw1_joint

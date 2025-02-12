@@ -34,7 +34,10 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import Command, FindExecutable, PathJoinSubstitution, LaunchConfiguration
+from launch.substitutions import Command
+from launch.substitutions import FindExecutable
+from launch.substitutions import PathJoinSubstitution
+from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 
@@ -44,21 +47,29 @@ def generate_launch_description():
                                          default_value="mk3",
                                          choices=["mk1", "mk2", "mk3"],
                                          description="Model of AR4")
-    ar_model_config = LaunchConfiguration("ar_model")
+    namespace_arg = DeclareLaunchArgument("namespace",
+                                          default_value="/",
+                                          description="Namespace of AR4")
 
-    initial_joint_controllers = PathJoinSubstitution([
-        FindPackageShare("annin_ar4_driver"), "config", "controllers.yaml"
-    ])
+    ar_model_config = LaunchConfiguration("ar_model")
+    namespace_config = LaunchConfiguration("namespace")
+
+    initial_joint_controllers = PathJoinSubstitution(
+        [FindPackageShare("annin_ar4_driver"), "config", "controllers.yaml"])
 
     robot_description_content = Command([
         PathJoinSubstitution([FindExecutable(name="xacro")]),
         " ",
         PathJoinSubstitution([
-            FindPackageShare("annin_ar4_description"), "urdf", "ar_gazebo.urdf.xacro"
+            FindPackageShare("annin_ar4_description"), "urdf",
+            "ar_gazebo.urdf.xacro"
         ]),
         " ",
         "ar_model:=",
         ar_model_config,
+        " ",
+        "namespace:=",
+        namespace_config,
         " ",
         "simulation_controllers:=",
         initial_joint_controllers,
@@ -68,26 +79,33 @@ def generate_launch_description():
     robot_state_publisher_node = Node(
         package="robot_state_publisher",
         executable="robot_state_publisher",
+        namespace=namespace_config,
         output="both",
         parameters=[robot_description],
-    )
+        remappings=[('/tf', PathJoinSubstitution([namespace_config, 'tf'])),
+                    ('/tf_static',
+                     PathJoinSubstitution([namespace_config, 'tf_static']))])
 
     joint_state_broadcaster_spawner = Node(
         package="controller_manager",
         executable="spawner",
         arguments=[
-            "joint_state_broadcaster", "-c", "/controller_manager",
-            "--controller-manager-timeout", "60"
+            "joint_state_broadcaster",
+            "-c",
+            PathJoinSubstitution([namespace_config, "controller_manager"]),
         ],
-    )
+        namespace=namespace_config)
 
     # There may be other controllers of the joints, but this is the initially-started one
     initial_joint_controller_spawner_started = Node(
         package="controller_manager",
         executable="spawner",
         arguments=[
-            "joint_trajectory_controller", "-c", "/controller_manager",
-            "--controller-manager-timeout", "60"
+            "joint_trajectory_controller",
+            "--param-file",
+            initial_joint_controllers,
+            "-c",
+            PathJoinSubstitution([namespace_config, "controller_manager"]),
         ],
     )
 
@@ -95,48 +113,50 @@ def generate_launch_description():
         package="controller_manager",
         executable="spawner",
         arguments=[
-            "gripper_controller", "-c", "/controller_manager",
-            "--controller-manager-timeout", "60"
+            "gripper_controller",
+            "-c",
+            PathJoinSubstitution([namespace_config, "controller_manager"]),
+            "--param-file",
+            initial_joint_controllers,
         ],
     )
 
     # Gazebo nodes
-    world = os.path.join(
-        get_package_share_directory('annin_ar4_gazebo'),
-        'worlds',
-        'empty.world'
-    )
+    world = os.path.join(get_package_share_directory('annin_ar4_gazebo'),
+                         'worlds', 'empty.world')
 
     # Bridge
     gazebo_bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
-        arguments=[
-            "/clock@rosgraph_msgs/msg/Clock[ignition.msgs.Clock"
-        ],
-        output='screen'
-    )
+        arguments=["/clock@rosgraph_msgs/msg/Clock[ignition.msgs.Clock"],
+        output='screen',
+        namespace=namespace_config)
 
     gazebo = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            [FindPackageShare("ros_gz_sim"), "/launch",
-             "/gz_sim.launch.py"]),
+            [FindPackageShare("ros_gz_sim"), "/launch", "/gz_sim.launch.py"]),
         launch_arguments={
-            'gz_args': f'-r -v 4 --physics-engine gz-physics-bullet-featherstone-plugin {world}',
-            'on_exit_shutdown': 'True'}.items())
+            'gz_args':
+            f'-r -v 4 --physics-engine gz-physics-bullet-featherstone-plugin {world}',
+            'on_exit_shutdown': 'True'
+        }.items())
 
     # Spawn robot
     gazebo_spawn_robot = Node(
         package="ros_gz_sim",
         executable="create",
         arguments=[
-            "-name", ar_model_config, "-topic", "robot_description"
+            "-name", ar_model_config, "-topic",
+            PathJoinSubstitution([namespace_config, "robot_description"])
         ],
         output="screen",
+        namespace=namespace_config,
     )
 
     return LaunchDescription([
         ar_model_arg,
+        namespace_arg,
         gazebo_bridge,
         gazebo,
         gazebo_spawn_robot,

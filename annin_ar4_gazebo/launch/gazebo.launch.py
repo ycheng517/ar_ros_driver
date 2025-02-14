@@ -28,12 +28,14 @@
 #
 # Author: Denis Stogl
 import os
+import tempfile
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.substitution import Substitution
 from launch.substitutions import (
     Command,
     FindExecutable,
@@ -42,6 +44,30 @@ from launch.substitutions import (
 )
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
+
+
+class ControllerConfigSubstitution(Substitution):
+    """Substitution that fills out tf_prefix in controllers.yaml."""
+
+    def __init__(self, file_path: Substitution, tf_prefix: Substitution):
+        super().__init__()
+        self._file_path = file_path
+        self._tf_prefix = tf_prefix
+
+    def perform(self, context):
+        # Evaluate the file path and namespace substitutions
+        file_path_val = self._file_path.perform(context)
+        tf_prefix_val = self._tf_prefix.perform(context)
+
+        with open(file_path_val, "r") as f:
+            content = f.read()
+
+        content = content.replace('$(var tf_prefix)', tf_prefix_val)
+
+        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".yaml")
+        temp_file.write(content.encode("utf-8"))
+        temp_file.close()
+        return temp_file.name
 
 
 def generate_launch_description():
@@ -57,8 +83,11 @@ def generate_launch_description():
                                           description="Prefix for AR4 tf_tree")
     tf_prefix = LaunchConfiguration("tf_prefix")
 
-    initial_joint_controllers = PathJoinSubstitution(
-        [FindPackageShare("annin_ar4_gazebo"), "config", "controllers.yaml"])
+    initial_joint_controllers = ControllerConfigSubstitution(
+        PathJoinSubstitution([
+            FindPackageShare("annin_ar4_driver"), "config", "controllers.yaml"
+        ]),
+        tf_prefix=tf_prefix)
 
     robot_description_content = Command([
         PathJoinSubstitution([FindExecutable(name="xacro")]),

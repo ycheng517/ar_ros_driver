@@ -1,22 +1,25 @@
-controller_names:
-  - joint_trajectory_controller
-  - gripper_controller
+move_group:
+  ros__parameters:
+    moveit_simple_controller_manager:
+      controller_names:
+        - joint_trajectory_controller
+        - gripper_controller
 
-joint_trajectory_controller:
-  action_ns: follow_joint_trajectory
-  type: FollowJointTrajectory
-  default: true
-  joints:
-    - joint_1
-    - joint_2
-    - joint_3
-    - joint_4
-    - joint_5
-    - joint_6
+      joint_trajectory_controller:
+        action_ns: follow_joint_trajectory
+        type: FollowJointTrajectory
+        default: true
+        joints:
+          - $(var tf_prefix)joint_1
+          - $(var tf_prefix)joint_2
+          - $(var tf_prefix)joint_3
+          - $(var tf_prefix)joint_4
+          - $(var tf_prefix)joint_5
+          - $(var tf_prefix)joint_6
 
-gripper_controller:
-  action_ns: gripper_cmd
-  type: GripperCommand
-  default: true
-  joints:
-    - gripper_jaw1_joint
+      gripper_controller:
+        action_ns: gripper_cmd
+        type: GripperCommand
+        default: true
+        joints:
+          - $(var tf_prefix)gripper_jaw1_joint

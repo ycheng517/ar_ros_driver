@@ -4,24 +4,24 @@
     A URDF file must exist for this robot as well, where the joints and the links that are referenced are defined
 -->
 <robot xmlns:xacro="http://wiki.ros.org/xacro">
-  <xacro:macro name="ar_gripper_srdf" params="prefix">
+  <xacro:macro name="ar_gripper_srdf" params="tf_prefix">
     <group name="ar_gripper">
-      <link name="${prefix}gripper_base_link" />
-      <link name="${prefix}gripper_jaw1_link" />
-      <link name="${prefix}gripper_jaw2_link" />
-      <joint name="${prefix}gripper_jaw1_joint" />
-      <passive_joint name="${prefix}gripper_jaw2_joint" />
+      <link name="${tf_prefix}gripper_base_link" />
+      <link name="${tf_prefix}gripper_jaw1_link" />
+      <link name="${tf_prefix}gripper_jaw2_link" />
+      <joint name="${tf_prefix}gripper_jaw1_joint" />
+      <passive_joint name="${tf_prefix}gripper_jaw2_joint" />
     </group>
     <group_state name="open" group="ar_gripper">
-      <joint name="${prefix}gripper_jaw1_joint" value="-0.012" />
+      <joint name="${tf_prefix}gripper_jaw1_joint" value="-0.012" />
     </group_state>
     <group_state name="closed" group="ar_gripper">
-      <joint name="${prefix}gripper_jaw1_joint" value="-0.001" />
+      <joint name="${tf_prefix}gripper_jaw1_joint" value="-0.001" />
     </group_state>
-    <disable_collisions link1="${prefix}gripper_base_link" link2="${prefix}gripper_jaw1_link" reason="Adjacent" />
-    <disable_collisions link1="${prefix}gripper_base_link" link2="${prefix}gripper_jaw2_link" reason="Adjacent" />
-    <disable_collisions link1="${prefix}gripper_jaw1_link" link2="${prefix}gripper_jaw2_link" reason="Default" />
-    <disable_collisions link1="${prefix}link_6" link2="${prefix}gripper_base_link" reason="Adjacent" />
-    <disable_collisions link1="${prefix}link_5" link2="${prefix}gripper_base_link" reason="Adjacent" />
+    <disable_collisions link1="${tf_prefix}gripper_base_link" link2="${tf_prefix}gripper_jaw1_link" reason="Adjacent" />
+    <disable_collisions link1="${tf_prefix}gripper_base_link" link2="${tf_prefix}gripper_jaw2_link" reason="Adjacent" />
+    <disable_collisions link1="${tf_prefix}gripper_jaw1_link" link2="${tf_prefix}gripper_jaw2_link" reason="Default" />
+    <disable_collisions link1="${tf_prefix}link_6" link2="${tf_prefix}gripper_base_link" reason="Adjacent" />
+    <disable_collisions link1="${tf_prefix}link_5" link2="${tf_prefix}gripper_base_link" reason="Adjacent" />
   </xacro:macro>
 </robot>

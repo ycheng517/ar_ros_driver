@@ -4,41 +4,41 @@
     A URDF file must exist for this robot as well, where the joints and the links that are referenced are defined
 -->
 <robot xmlns:xacro="http://wiki.ros.org/xacro">
-  <xacro:macro name="ar_srdf" params="prefix">
+  <xacro:macro name="ar_srdf" params="tf_prefix">
     <group name="ar_manipulator">
-      <joint name="${prefix}joint_1" />
-      <joint name="${prefix}joint_2" />
-      <joint name="${prefix}joint_3" />
-      <joint name="${prefix}joint_4" />
-      <joint name="${prefix}joint_5" />
-      <joint name="${prefix}joint_6" />
-      <joint name="${prefix}ee_joint"/>
+      <joint name="${tf_prefix}joint_1" />
+      <joint name="${tf_prefix}joint_2" />
+      <joint name="${tf_prefix}joint_3" />
+      <joint name="${tf_prefix}joint_4" />
+      <joint name="${tf_prefix}joint_5" />
+      <joint name="${tf_prefix}joint_6" />
+      <joint name="${tf_prefix}ee_joint"/>
     </group>
     <group_state name="home" group="ar_manipulator">
-      <joint name="${prefix}joint_1" value="0" />
-      <joint name="${prefix}joint_2" value="0" />
-      <joint name="${prefix}joint_3" value="0" />
-      <joint name="${prefix}joint_4" value="0" />
-      <joint name="${prefix}joint_5" value="0" />
-      <joint name="${prefix}joint_6" value="0" />
+      <joint name="${tf_prefix}joint_1" value="0" />
+      <joint name="${tf_prefix}joint_2" value="0" />
+      <joint name="${tf_prefix}joint_3" value="0" />
+      <joint name="${tf_prefix}joint_4" value="0" />
+      <joint name="${tf_prefix}joint_5" value="0" />
+      <joint name="${tf_prefix}joint_6" value="0" />
     </group_state>
     <group_state name="upright" group="ar_manipulator">
-      <joint name="${prefix}joint_1" value="0" />
-      <joint name="${prefix}joint_2" value="-0.087" />
-      <joint name="${prefix}joint_3" value="-1.4" />
-      <joint name="${prefix}joint_4" value="0" />
-      <joint name="${prefix}joint_5" value="0" />
-      <joint name="${prefix}joint_6" value="0" />
+      <joint name="${tf_prefix}joint_1" value="0" />
+      <joint name="${tf_prefix}joint_2" value="-0.087" />
+      <joint name="${tf_prefix}joint_3" value="-1.4" />
+      <joint name="${tf_prefix}joint_4" value="0" />
+      <joint name="${tf_prefix}joint_5" value="0" />
+      <joint name="${tf_prefix}joint_6" value="0" />
     </group_state>
-    <disable_collisions link1="${prefix}base_link" link2="${prefix}link_1" reason="Adjacent" />
-    <disable_collisions link1="${prefix}link_1" link2="${prefix}link_2" reason="Adjacent" />
-    <disable_collisions link1="${prefix}link_1" link2="${prefix}link_3" reason="Never" />
-    <disable_collisions link1="${prefix}link_2" link2="${prefix}link_3" reason="Adjacent" />
-    <disable_collisions link1="${prefix}link_3" link2="${prefix}link_4" reason="Adjacent" />
-    <disable_collisions link1="${prefix}link_3" link2="${prefix}link_5" reason="Never" />
-    <disable_collisions link1="${prefix}link_3" link2="${prefix}link_6" reason="Never" />
-    <disable_collisions link1="${prefix}link_4" link2="${prefix}link_5" reason="Adjacent" />
-    <disable_collisions link1="${prefix}link_5" link2="${prefix}link_6" reason="Adjacent" />
+    <disable_collisions link1="${tf_prefix}base_link" link2="${tf_prefix}link_1" reason="Adjacent" />
+    <disable_collisions link1="${tf_prefix}link_1" link2="${tf_prefix}link_2" reason="Adjacent" />
+    <disable_collisions link1="${tf_prefix}link_1" link2="${tf_prefix}link_3" reason="Never" />
+    <disable_collisions link1="${tf_prefix}link_2" link2="${tf_prefix}link_3" reason="Adjacent" />
+    <disable_collisions link1="${tf_prefix}link_3" link2="${tf_prefix}link_4" reason="Adjacent" />
+    <disable_collisions link1="${tf_prefix}link_3" link2="${tf_prefix}link_5" reason="Never" />
+    <disable_collisions link1="${tf_prefix}link_3" link2="${tf_prefix}link_6" reason="Never" />
+    <disable_collisions link1="${tf_prefix}link_4" link2="${tf_prefix}link_5" reason="Adjacent" />
+    <disable_collisions link1="${tf_prefix}link_5" link2="${tf_prefix}link_6" reason="Adjacent" />
 
   </xacro:macro>
 </robot>
